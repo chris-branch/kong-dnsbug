@@ -1,0 +1,55 @@
+version: "3.2"
+
+networks:
+  kong-network:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+    
+services:
+  custom-dns:
+    image: coredns/coredns
+    container_name: custom-dns
+    command: -conf coredns-config/Corefile
+    ports:
+      - 53:53/udp
+    networks:
+      kong-network:
+        ipv4_address: 172.20.0.2
+    volumes:
+      - ./coredns:/coredns-config
+
+  kong-database:
+    image: cassandra:3
+    container_name: kong-database
+    ports:
+      - 9042:9042
+    networks:
+      - kong-network
+        
+  kong:
+    image: kong
+    container_name: kong
+    environment:
+      - KONG_DATABASE=cassandra
+      - KONG_CASSANDRA_CONTACT_POINTS=kong-database
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_ANONYMOUS_REPORTS=off
+      - KONG_LOG_LEVEL=debug
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    ports:
+      - 8000:8000
+      - 8001:8001
+    dns:
+      - "172.20.0.2"
+    networks:
+      - kong-network
+    depends_on:
+      - kong-database

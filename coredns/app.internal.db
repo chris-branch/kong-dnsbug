@@ -1,0 +1,12 @@
+$ORIGIN app.internal.
+$TTL 86400
+@	SOA	example.app.internal.	hostmaster.app.internal. (
+		2020012011 ; serial
+		3600       ; refresh after 1 hour
+		3600       ; retry after 1 hour
+		604800     ; expire after 1 week
+		86400 )    ; minimum TTL of 1 day
+;
+;
+example	0   A	192.168.65.2
+;
